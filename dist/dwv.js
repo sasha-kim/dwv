@@ -1,4 +1,4 @@
-/*! dwv 0.30.8 2022-01-04 12:43:27 */
+/*! dwv 0.30.8 2022-01-28 01:01:30 */
 // Inspired from umdjs
 // See https://github.com/umdjs/umd/blob/master/templates/returnExports.js
 (function (root, factory) {
@@ -1281,6 +1281,112 @@ dwv.App = function () {
 
     // view layer
     var viewLayer = layerGroup.addViewLayer();
+    viewLayer.setView(view);
+    var size2D = imageGeometry.getSize(viewOrientation).get2D();
+    var spacing2D = imageGeometry.getSpacing(viewOrientation).get2D();
+    viewLayer.initialise(size2D, spacing2D, dataIndex);
+    viewLayer.setOpacity(opacity);
+
+    // compensate origin difference
+    var diff = null;
+    if (dataIndex !== 0) {
+      var data0 = dataController.get(0);
+      var origin0 = data0.image.getGeometry().getOrigin();
+      var origin1 = imageGeometry.getOrigin();
+      diff = origin0.minus(origin1);
+      viewLayer.setBaseOffset(diff);
+    }
+
+    // listen to image changes
+    dataController.addEventListener('imagechange', viewLayer.onimagechange);
+
+    // bind
+    stage.bindLayerGroups();
+
+    // optional draw layer
+    if (toolboxController && toolboxController.hasTool('Draw')) {
+      var dl = layerGroup.addDrawLayer();
+      dl.initialise(size2D, spacing2D, dataIndex);
+      dl.setPlaneHelper(viewLayer.getViewController().getPlaneHelper());
+
+      var vc = viewLayer.getViewController();
+      // positionchange event like data
+      var value = [
+        vc.getCurrentIndex().getValues(),
+        vc.getCurrentPosition().getValues()
+      ];
+      layerGroup.updateLayersToPositionChange({value: value});
+
+      // compensate origin difference
+      if (dataIndex !== 0) {
+        dl.setBaseOffset(diff);
+      }
+    }
+
+    // fit to the maximum size
+    var maxSize = {x: 0, y: 0};
+    for (var i = 0; i < dataController.length(); ++i) {
+      var dc = dataController.get(i);
+      var geometry = dc.image.getGeometry();
+      var viewOrient = dwv.gui.getViewOrientation(
+        geometry,
+        layerGroup.getTargetOrientation()
+      );
+      var size = geometry.getSize(viewOrient).get2D();
+      var spacing = geometry.getSpacing(viewOrient).get2D();
+      var width = size.x * spacing.x;
+      if (width > maxSize.x) {
+        maxSize.x = width;
+      }
+      var height = size.y * spacing.y;
+      if (height > maxSize.y) {
+        maxSize.y = height;
+      }
+    }
+    layerGroup.fitToContainer(maxSize);
+  }
+
+  /**
+   * Add a mask view layer.
+   *
+   * @param {number} dataIndex The data index.
+   * @param {string} layerGroupElementId The layer group element id.
+   */
+  function addMaskViewLayer(dataIndex, layerGroupElementId) {
+    var data = dataController.get(dataIndex);
+    if (!data) {
+      throw new Error('Cannot initialise layers with data id: ' + dataIndex);
+    }
+    var layerGroup = stage.getLayerGroupWithElementId(layerGroupElementId);
+    if (!layerGroup) {
+      throw new Error('Cannot initialise layers with group id: ' +
+          layerGroupElementId);
+    }
+    var imageGeometry = data.image.getGeometry();
+
+    // un-bind
+    stage.unbindLayerGroups();
+
+    // create and setup view
+    var viewFactory = new dwv.ViewFactory();
+    var view = viewFactory.create(
+      new dwv.dicom.DicomElementsWrapper(data.meta),
+      data.image);
+    var viewOrientation = dwv.gui.getViewOrientation(
+      imageGeometry,
+      layerGroup.getTargetOrientation()
+    );
+    view.setOrientation(viewOrientation);
+
+    // TODO: find another way for a default colour map
+    var opacity = 1;
+    if (dataIndex !== 0) {
+      view.setColourMap(dwv.image.lut.rainbow);
+      opacity = 0.5;
+    }
+
+    // view layer
+    var viewLayer = layerGroup.addMaskViewLayer();
     viewLayer.setView(view);
     var size2D = imageGeometry.getSize(viewOrientation).get2D();
     var spacing2D = imageGeometry.getSpacing(viewOrientation).get2D();
@@ -12010,7 +12116,25 @@ dwv.gui.LayerGroup = function (containerDiv, groupId) {
       }
     }
   };
-
+  /**
+   * Add a mask view layer.
+   *
+   * @returns {object} The created layer.
+   */
+  this.addMaskViewLayer = function () {
+    // create div
+    var div = getNextLayerDiv();
+    // prepend to container
+    containerDiv.append(div);
+    // view layer
+    var layer = new dwv.gui.ViewLayer(div);
+    // add layer
+    layers.push(layer);
+    // bind view layer events
+    bindViewLayer(layer);
+    // return
+    return layer;
+  };
   /**
    * Add a view layer.
    *
