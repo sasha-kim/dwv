@@ -340,7 +340,25 @@ dwv.gui.LayerGroup = function (containerDiv, groupId) {
       }
     }
   };
-
+  /**
+   * Add a mask view layer.
+   *
+   * @returns {object} The created layer.
+   */
+  this.addMaskViewLayer = function () {
+    // create div
+    var div = getNextLayerDiv();
+    // prepend to container
+    containerDiv.append(div);
+    // view layer
+    var layer = new dwv.gui.ViewLayer(div);
+    // add layer
+    layers.push(layer);
+    // bind view layer events
+    bindViewLayer(layer);
+    // return
+    return layer;
+  };
   /**
    * Add a view layer.
    *
