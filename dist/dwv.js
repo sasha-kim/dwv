@@ -1,4 +1,4 @@
-/*! dwv 0.30.8 2022-02-03 13:47:56 */
+/*! dwv 0.30.8 2022-02-14 14:29:25 */
 // Inspired from umdjs
 // See https://github.com/umdjs/umd/blob/master/templates/returnExports.js
 (function (root, factory) {
@@ -4544,6 +4544,8 @@ dwv.dicom.getUtfLabel = function (charSetTerm) {
   } else if (charSetTerm === 'ISO 2022 IR 149') {
     // not supported by TextDecoder when it says it should...
     //label = "iso-2022-kr";
+  } else if (charSetTerm === 'ISO_IR 149') {
+    label = 'euc-kr';
   } else if (charSetTerm === 'ISO 2022 IR 58') {
     // not supported by TextDecoder...
     //label = "iso-2022-cn";
