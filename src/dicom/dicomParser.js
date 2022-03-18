@@ -86,6 +86,7 @@ dwv.dicom.getUtfLabel = function (charSetTerm) {
   } else if (charSetTerm === 'ISO 2022 IR 149') {
     // not supported by TextDecoder when it says it should...
     //label = "iso-2022-kr";
+    label = 'euc-kr';
   } else if (charSetTerm === 'ISO_IR 149') {
     label = 'euc-kr';
   } else if (charSetTerm === 'ISO 2022 IR 58') {
