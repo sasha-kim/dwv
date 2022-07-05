@@ -1,4 +1,4 @@
-/*! dwv 0.30.8 2022-03-18 16:48:05 */
+/*! dwv 0.30.8 2022-07-05 17:51:27 */
 // Inspired from umdjs
 // See https://github.com/umdjs/umd/blob/master/templates/returnExports.js
 (function (root, factory) {
@@ -1303,7 +1303,8 @@ dwv.App = function () {
     // bind
     stage.bindLayerGroups();
     // mask start
-    {
+    // eslint-disable-next-line no-constant-condition
+    for (var i = 0; i < (options.maskCount || 1); i++) {
       let dl = layerGroup.addDrawLayer();
       dl.initialise(size2D, spacing2D, dataIndex);
       dl.setPlaneHelper(viewLayer.getViewController().getPlaneHelper());
